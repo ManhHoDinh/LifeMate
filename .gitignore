@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+runs/
+dist/
+.omc/
+.ruff_cache/
+# organiser data and anything derived from it (audio, transcripts, labels, SFT data) must not leave the team
+kaggle/audio_dataset/
+kaggle/public_audio_dataset/
+kaggle/dataset/*.jsonl
+kaggle/dataset/*.zip
+sft/
+asr/
+logs/
+# model weights (shipped in the Docker image) and Docker build staging
+models/
+ckpt/
+*.safetensors
+*.zip
+*.wav
+*.tar

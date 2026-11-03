@@ -1,0 +1,13 @@
+{
+  "id": "manhhodinh/lifemate-asr-finetune",
+  "title": "lifemate-asr-finetune",
+  "code_file": "asr_kernel.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["manhhodinh/lifemate-sft", "manhhodinh/lifemate-audio"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

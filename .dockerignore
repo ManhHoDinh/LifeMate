@@ -1,0 +1,11 @@
+.venv/
+runs/
+dist/
+kaggle/
+asr/
+sft/
+logs/
+ckpt/
+notebooks/
+tests/
+**/__pycache__/

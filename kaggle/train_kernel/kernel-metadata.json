@@ -1,0 +1,13 @@
+{
+  "id": "manhhodinh/lifemate-train-qlora",
+  "title": "lifemate-train-qlora",
+  "code_file": "train_kernel.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["manhhodinh/lifemate-sft"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

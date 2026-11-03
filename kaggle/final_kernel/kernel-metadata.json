@@ -1,0 +1,13 @@
+{
+  "id": "manhhodinh/lifemate-final",
+  "title": "lifemate-final",
+  "code_file": "final_kernel.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["manhhodinh/lifemate-sft", "manhhodinh/lifemate-public-audio"],
+  "competition_sources": [],
+  "kernel_sources": ["manhhodinh/lifemate-train-qlora", "manhhodinh/lifemate-asr-finetune"]
+}

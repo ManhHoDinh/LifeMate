@@ -1,0 +1,13 @@
+{
+  "id": "manhhodinh/lifemate-shard-check",
+  "title": "lifemate-shard-check",
+  "code_file": "shard_check.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["manhhodinh/lifemate-sft", "manhhodinh/lifemate-public-audio"],
+  "competition_sources": [],
+  "kernel_sources": ["manhhodinh/lifemate-final", "manhhodinh/lifemate-docker-parity"]
+}
