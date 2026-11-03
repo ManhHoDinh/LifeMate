@@ -30,6 +30,26 @@ Vietnamese audio → transcript → LLM agent calling tools on `zaic_tools` → 
 
 The organiser data is not in this repo (it may not be redistributed); point `LIFEMATE_DATA` at your own copy.
 
+## Kaggle resources
+
+All GPU work runs on Kaggle under the account `manhhodinh`. The code of every kernel is in `kaggle/` here; the Kaggle pages hold the runs, logs and outputs.
+
+**Access:** these datasets and kernels are **private and must stay private**: they contain the organiser data (audio, `state.json`, labels) or outputs derived from it (transcripts, submissions), which may only be used by registered teams and not redistributed. Teammates get access by being added as collaborators: on each page, **Share → Add collaborators** → their Kaggle username (Viewer to read, Editor to run new versions). Never switch them to Public.
+
+| Kind | Link | What it holds / does |
+|---|---|---|
+| Dataset | [lifemate-sft](https://www.kaggle.com/datasets/manhhodinh/lifemate-sft) | `lifemate_code` (this package), `sft_train.jsonl`, organiser data without audio |
+| Dataset | [lifemate-audio](https://www.kaggle.com/datasets/manhhodinh/lifemate-audio) | train audio (ASR fine-tune) |
+| Dataset | [lifemate-public-audio](https://www.kaggle.com/datasets/manhhodinh/lifemate-public-audio) | public_test audio |
+| Kernel | [lifemate-train-qlora](https://www.kaggle.com/code/manhhodinh/lifemate-train-qlora) | LoRA training of Qwen3-4B (`kaggle/train_kernel`) → adapter |
+| Kernel | [lifemate-asr-finetune](https://www.kaggle.com/code/manhhodinh/lifemate-asr-finetune) | PhoWhisper-medium fine-tune (`kaggle/asr_kernel`) |
+| Kernel | [lifemate-final](https://www.kaggle.com/code/manhhodinh/lifemate-final) | merge + export `models/`, val scores, public_test submission (`kaggle/final_kernel`) |
+| Kernel | [lifemate-docker-parity](https://www.kaggle.com/code/manhhodinh/lifemate-docker-parity) | GPU run of the Docker image setup, run twice for determinism (`kaggle/docker_parity`) |
+| Kernel | [lifemate-shard-check](https://www.kaggle.com/code/manhhodinh/lifemate-shard-check) | GPU check of the 8-shard LLM layout (`kaggle/shard_check`) |
+| Kernel | [lifemate-sdpa-diag](https://www.kaggle.com/code/manhhodinh/lifemate-sdpa-diag) | T4 attention-kernel diagnostics (`kaggle/sdpa_diag`) |
+
+To run a kernel from your own account: copy it on Kaggle ("Copy & Edit") once you have access, or push the folder with the Kaggle CLI after changing `id` in its `kernel-metadata.json` to your username (the dataset sources must be shared with you too).
+
 ## Final pipeline
 
 1. `python -m lifemate.sft --ids train --out sft/train.jsonl` → private Kaggle dataset `manhhodinh/lifemate-sft` (together with the code and the audio-free data).
