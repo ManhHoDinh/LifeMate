@@ -71,6 +71,7 @@ def main():
     ap.add_argument("--wave", type=int, default=8)
     ap.add_argument("--gpu-mem", type=float, default=0.85)
     ap.add_argument("--asr-batch", type=int, default=16)
+    ap.add_argument("--asr-beams", type=int, default=1)
     ap.add_argument("--no-cudnn", action="store_true")
     ap.add_argument("--limit", type=int, default=None, help="first N samples (tests)")
     args = ap.parse_args()
@@ -91,7 +92,7 @@ def main():
 
         paths = sorted({p for s in samples for p, _ in user_turns(s)})
         t0 = time.time()
-        texts = transcribe(paths, root / split, args.asr_model, args.asr_batch, args.no_cudnn)
+        texts = transcribe(paths, root / split, args.asr_model, args.asr_batch, args.no_cudnn, args.asr_beams)
         print(f"ASR: {len(paths)} clips in {time.time() - t0:.1f}s", flush=True)
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).with_name("transcripts.json").write_text(json.dumps(texts, ensure_ascii=False, indent=0), encoding="utf-8")

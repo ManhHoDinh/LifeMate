@@ -39,9 +39,24 @@ def _len(tok, messages, gen: bool) -> int:
     return len(ids)
 
 
-def load_rows(path: str) -> list[dict]:
-    with open(path, encoding="utf-8") as f:
-        return [json.loads(line) for line in f if line.strip()]
+def load_rows(paths: str) -> list[dict]:
+    """Comma-separated jsonl files; `file:0.3` keeps a fixed random 30% of that file (replay of older data)."""
+    rows = []
+    for spec in paths.split(","):
+        path, _, frac = spec.rpartition(":")
+        if not path or not frac.replace(".", "", 1).isdigit():  # no ratio (a colon may belong to a drive letter)
+            path, frac = spec, ""
+        with open(path, encoding="utf-8") as f:
+            part = [json.loads(line) for line in f if line.strip()]
+        if frac:
+            part = random.Random(0).sample(part, round(len(part) * float(frac)))
+        rows += part
+    from .prompt import refresh_system
+
+    for r in rows:  # data written by an older prompt version trains the current one
+        if r["messages"] and r["messages"][0]["role"] == "system":
+            r["messages"][0]["content"] = refresh_system(r["messages"][0]["content"])
+    return rows
 
 
 def check(tok, rows, max_len: int):
@@ -74,7 +89,8 @@ def check(tok, rows, max_len: int):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", required=True)
+    ap.add_argument("--data", required=True, help="jsonl file(s), comma-separated; file:0.3 keeps 30%% of a file")
+    ap.add_argument("--init-adapter", default=None, help="LoRA adapter dir to continue training from")
     ap.add_argument("--model", default="Qwen/Qwen3-4B-Instruct-2507")
     ap.add_argument("--out", default="ckpt/qwen3_4b_lora")
     ap.add_argument("--max-len", type=int, default=12288)
@@ -151,8 +167,13 @@ def main():
     # which on a T4 pushed attention off the memory-efficient SDPA kernel and ran out of memory in backward
     model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     model.enable_input_require_grads()
-    model = get_peft_model(model, LoraConfig(r=args.rank, lora_alpha=2 * args.rank, lora_dropout=0.05, task_type="CAUSAL_LM",
-                                             target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]))
+    if args.init_adapter:  # continue training an earlier adapter (new data + replay) instead of starting from zero
+        from peft import PeftModel
+
+        model = PeftModel.from_pretrained(model, args.init_adapter, is_trainable=True)
+    else:
+        model = get_peft_model(model, LoraConfig(r=args.rank, lora_alpha=2 * args.rank, lora_dropout=0.05, task_type="CAUSAL_LM",
+                                                 target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]))
     model.print_trainable_parameters()
 
     def collate(batch):

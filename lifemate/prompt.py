@@ -23,7 +23,8 @@ Quy tắc:
 6. Nếu không app nào đã cài làm được yêu cầu, hoặc người dùng đổi ý / bảo thôi, trả về {"name": "done"} ngay, không gọi tool nào.
 7. Yêu cầu có điều kiện ("nếu mai mưa thì...", "nếu ví đủ tiền thì..."): gọi tool đọc để kiểm tra, rồi chỉ làm nhánh đúng.
 8. Định dạng: thời điểm ISO-8601 kèm múi giờ (2026-11-16T17:00:00+07:00), ngày YYYY-MM-DD, giờ HH:MM, tiền là số nguyên VND (500 nghìn = 500000, 1 triệu rưỡi = 1500000). Tính "mai", "tối nay", "thứ Sáu tuần sau" từ thời gian hiện tại.
-9. Nội dung tin nhắn, nhắc nhở, ghi chú: viết ngắn gọn, giữ đúng ý và từ ngữ của người dùng."""
+9. Nội dung tin nhắn, nhắc nhở, ghi chú: viết ngắn gọn, giữ đúng ý và từ ngữ của người dùng.
+10. Hỏi lại thay vì đoán: nhắc nhở / báo thức / lịch mà người dùng không nói thời gian; số tiền không rõ ("ít tiền", "một khoản"); nhiều mục khớp mà không biết chọn mục nào. Nhưng thứ tra được bằng tool (người liên hệ theo tên, tập/bài/món theo tên, chuyến theo tuyến) thì gọi tool tra trước, không hỏi."""
 
 
 def _type_str(p: dict) -> str:
@@ -73,6 +74,33 @@ def render_tools(sample: dict, tools: dict, apps: dict) -> str:
     return "\n".join(out)
 
 
+def calendar_lines(now: datetime) -> list[str]:
+    """This week and next week (Monday-Sunday) with dates: weekday arithmetic ("thứ Sáu tuần sau", "thứ Hai này") was the
+    most common date error of the model (val runs, 2026-11-03), and a table turns it into a lookup."""
+    monday = now.date() - timedelta(days=now.weekday())
+    out = []
+    for label, start in (("Tuần này", monday), ("Tuần sau", monday + timedelta(days=7))):
+        days = [start + timedelta(days=i) for i in range(7)]
+        out.append(f"{label}: " + " | ".join(f"{WEEKDAYS[i]} {d:%Y-%m-%d}" + (" (hôm nay)" if d == now.date() else "")
+                                              for i, d in enumerate(days)))
+    return out
+
+
+def refresh_system(content: str) -> str:
+    """Re-render the parts of a stored system prompt that depend on the code (rules, calendar lines) so SFT data written by
+    an older version trains the current prompt. Idempotent; the context lines and tool list are kept as they are."""
+    head, sep, rest = content.partition("\n\n# Ngữ cảnh người dùng\n")
+    if not sep:
+        return content
+    ctx, sep2, tail = rest.partition("\n\n# Các app đã cài")
+    lines = [ln for ln in ctx.split("\n") if not ln.startswith(("Tuần này: ", "Tuần sau: "))]
+    if lines and lines[0].startswith("Thời gian hiện tại: "):
+        now = datetime.fromisoformat(lines[0].split(": ", 1)[1].split(" ")[0])
+        at = next((i + 1 for i, ln in enumerate(lines) if ln.startswith("Ngày mai: ")), 1)
+        lines[at:at] = calendar_lines(now)
+    return f"{SYSTEM_RULES}{sep}" + "\n".join(lines) + sep2 + tail
+
+
 def render_context(ctx: dict) -> str:
     now = datetime.fromisoformat(ctx["current_time"])
     tomorrow = now + timedelta(days=1)
@@ -80,6 +108,7 @@ def render_context(ctx: dict) -> str:
     lines = [
         f"Thời gian hiện tại: {ctx['current_time']} ({WEEKDAYS[now.weekday()]}, {now:%d/%m/%Y %H:%M}), múi giờ {ctx.get('timezone', '')}",
         f"Ngày mai: {tomorrow:%Y-%m-%d} ({WEEKDAYS[tomorrow.weekday()]})",
+        *calendar_lines(now),
     ]
     if ctx.get("location"):
         lines.append(f"Vị trí hiện tại: {json.dumps(ctx['location'], ensure_ascii=False)}")

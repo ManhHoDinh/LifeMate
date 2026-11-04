@@ -1,0 +1,13 @@
+{
+  "id": "manhhodinh/lifemate-synth-exp",
+  "title": "lifemate-synth-exp",
+  "code_file": "exp_kernel.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["manhhodinh/lifemate-sft"],
+  "competition_sources": [],
+  "kernel_sources": ["manhhodinh/lifemate-synth", "manhhodinh/lifemate-train-qlora"]
+}

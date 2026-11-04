@@ -72,8 +72,10 @@ def load_wav(path, sr: int = 16000):
     return x
 
 
-def transcribe(paths: list[str], audio_root: Path, model: str, batch_size: int = 16, no_cudnn: bool = False) -> dict[str, str]:
-    """{relative audio path: transcript}; greedy decoding, fp16 on GPU. Frees the model's GPU memory before returning."""
+def transcribe(paths: list[str], audio_root: Path, model: str, batch_size: int = 16, no_cudnn: bool = False,
+               num_beams: int = 1) -> dict[str, str]:
+    """{relative audio path: transcript}; greedy (num_beams=1) or beam-search decoding, fp16 on GPU.
+    Frees the model's GPU memory before returning."""
     import gc
 
     import torch
@@ -86,7 +88,7 @@ def transcribe(paths: list[str], audio_root: Path, model: str, batch_size: int =
                    torch_dtype=torch.float16 if cuda else torch.float32)
     clips = ({"raw": load_wav(audio_root / p), "sampling_rate": 16000} for p in paths)
     outs = asr(clips, batch_size=batch_size,
-               generate_kwargs={"num_beams": 1, "do_sample": False, "language": "vi", "task": "transcribe"})
+               generate_kwargs={"num_beams": num_beams, "do_sample": False, "language": "vi", "task": "transcribe"})
     result = {p: o["text"].strip() for p, o in zip(paths, outs)}
     del asr
     gc.collect()
@@ -104,6 +106,7 @@ def main():
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--model", default="vinai/PhoWhisper-medium")
     ap.add_argument("--batch-size", type=int, default=16)
+    ap.add_argument("--beams", type=int, default=1)
     ap.add_argument("--out", required=True)
     ap.add_argument("--no-cudnn", action="store_true",
                     help="disable cuDNN (Colab after `pip install vllm`: CUDNN_STATUS_SUBLIBRARY_VERSION_MISMATCH in the conv encoder)")
@@ -114,7 +117,7 @@ def main():
     turns = {p: ref for s in samples for p, ref in user_turns(s)}
     paths = sorted(turns)
     t0 = time.time()
-    result = transcribe(paths, root / args.split, args.model, args.batch_size, args.no_cudnn)
+    result = transcribe(paths, root / args.split, args.model, args.batch_size, args.no_cudnn, args.beams)
     elapsed = time.time() - t0
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(result, ensure_ascii=False, indent=0), encoding="utf-8")
